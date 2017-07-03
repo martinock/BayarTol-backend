@@ -5,6 +5,13 @@ API for BayarTol android application. If you are looking the android app, see [B
 This repository is under Apache License 2.0
 Please read the term and condition [Apache License 2.0]
 
+#METHOD
+Request through : http://us-central1-upiki-77460.cloudfunctions.net/
+use content-type: application/json
+
+##Register
+Register new account : /register
+
 # Created by Upiki
 1. Martino Christanto Khuangga
 2. Malvin Juanda
