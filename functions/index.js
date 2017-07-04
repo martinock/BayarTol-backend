@@ -17,13 +17,16 @@ exports.register = functions.https.onRequest((req, res) => {
 						disabled: false
 					})
 					.then(function(userRecord) {
+						//Set New User Data
 						var data = {
 							name: req.body.name,
 							phone_number: req.body.phone_number,
-							address: req.body.address
+							address: req.body.address,
+							money: 0
 						}
 
 						admin.database().ref("/users").child(userRecord.uid).push().set(data)
+
 						var body = {
 							uid: userRecord.uid
 						};
@@ -39,6 +42,22 @@ exports.register = functions.https.onRequest((req, res) => {
 					res.status(400).send({ error: 'Wrong Application Type' });
 			}
 	      break;
+	    default:
+			res.status(400).send({ error: 'Undefined Request Method' });
+			break;
+  	}
+});
+
+exports.profile = functions.https.onRequest((req, res) => {
+	switch (req.method) {
+	    case 'GET':
+			admin.database().ref("/users").child(req.query.uid).on("value", function(snapshot) {
+				res.type('application/json');
+				res.status(200).send(snapshot.val());
+			}, function (errorObject) {
+				res.status(errorObject.code).send({ error: 'Read data failed' });
+			});
+	      	break;
 	    default:
 			res.status(400).send({ error: 'Undefined Request Method' });
 			break;
