@@ -104,8 +104,10 @@ exports.transaction = functions.https.onRequest((req, res) => {
 					datetime: formattedDatetime
 				}
 
-				admin.database().ref("/transactions").child(req.body.uid).push().set(data)
+				admin.database().ref("/transactions").child(req.query.uid).push().set(data)
 
+				res.type('application/json');
+				res.status(200).send({status: 'OK'});
 				
 			}, function (errorObject) {
 				res.status(errorObject.code).send({ error: 'Read data failed' });
