@@ -26,7 +26,7 @@ exports.register = functions.https.onRequest((req, res) => {
 								money: 0
 							};
 
-							admin.database().ref("/users").child(userRecord.uid).push().set(data);
+							admin.database().ref("/users").child(userRecord.uid).set(data);
 
 							var body = {
 								uid: userRecord.uid
@@ -43,7 +43,7 @@ exports.register = functions.https.onRequest((req, res) => {
 								cost: req.body.cost
 							};
 
-							admin.database().ref("/tolls").child(userRecord.uid).push().set(data);
+							admin.database().ref("/tolls").child(userRecord.uid).set(data);
 
 							var body = {
 								uid: userRecord.uid
@@ -100,6 +100,7 @@ exports.transaction = functions.https.onRequest((req, res) => {
 				var data = {
 					uid: req.query.uid,
 					tid: req.query.tid,
+					toll_name: tollData.name,
 					cost: tollData.cost,
 					datetime: formattedDatetime
 				}
@@ -118,3 +119,47 @@ exports.transaction = functions.https.onRequest((req, res) => {
 			break;
   	}
 });
+
+exports.history = functions.https.onRequest((req, res) => {
+	switch (req.method) {
+	    case 'GET':
+	    	var startDate = new Date(req.query.start_date).getTime();
+			var endDate = new Date(req.query.end_date).getTime();
+			var data = [];
+
+			var query = admin.database().ref("/transactions").child(req.query.uid);
+			query.once("value")
+			  .then(function(snapshot) {
+			    snapshot.forEach(function(childSnapshot) {
+			    	var childData = childSnapshot.val();
+			    	var transDate = new Date(childData.datetime).getTime();
+
+			    	if (transDate >= startDate && transDate <= endDate) {
+			    		 var arrayData = {
+			    		 	toll_name: childData.toll_name, 
+			    		 	cost: childData.cost, 
+			    		 	datetime: childData.datetime
+			    		 };
+			    		data.push(arrayData);
+			    	}
+			  });
+			})
+			.then(function(){
+				res.type('application/json');
+				res.status(200).send(JSON.stringify(data));
+			})
+			.catch(function(error) {
+				res.status(errorObject.code).send({ error: errorObject.message });
+			});
+
+			  
+
+      		break;
+	    default:
+			res.status(400).send({ error: 'Undefined Request Method' });
+		break;
+  	}
+});
+
+
+
