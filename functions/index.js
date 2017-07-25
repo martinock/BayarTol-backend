@@ -23,7 +23,8 @@ exports.register = functions.https.onRequest((req, res) => {
 								name: req.body.name,
 								phone_number: req.body.phone_number,
 								address: req.body.address,
-								money: 0
+								money: 0,
+								email: req.body.email
 							};
 
 							admin.database().ref("/users").child(userRecord.uid).set(data);
@@ -109,7 +110,7 @@ exports.transaction = functions.https.onRequest((req, res) => {
 
 				res.type('application/json');
 				res.status(200).send({status: 'OK'});
-				
+
 			}, function (errorObject) {
 				res.status(errorObject.code).send({ error: 'Read data failed' });
 			});
@@ -136,8 +137,8 @@ exports.history = functions.https.onRequest((req, res) => {
 
 			    	if (transDate >= startDate && transDate <= endDate) {
 			    		 var arrayData = {
-			    		 	toll_name: childData.toll_name, 
-			    		 	cost: childData.cost, 
+			    		 	toll_name: childData.toll_name,
+			    		 	cost: childData.cost,
 			    		 	datetime: childData.datetime
 			    		 };
 			    		data.push(arrayData);
@@ -152,7 +153,7 @@ exports.history = functions.https.onRequest((req, res) => {
 				res.status(errorObject.code).send({ error: errorObject.message });
 			});
 
-			  
+
 
       		break;
 	    default:
@@ -161,5 +162,21 @@ exports.history = functions.https.onRequest((req, res) => {
   	}
 });
 
-
-
+exports.login = functions.https.onRequest((req, res) => {
+	switch (req.method) {
+		case 'POST':
+			admin.database()
+			.ref("/users")
+			.orderByChild("email")
+			.equalTo(req.body.email)
+			.on("child_added", function(snapshot) {
+				res.type('application/json');
+				res.status(200).send({ uid: snapshot.key });
+			}, function (errorObject) {
+				res.status(errorObject.code).send({ error: 'Read data failed' });
+			});
+			break;
+		default:
+			res.status(400).send({ error: 'Undefined Request Method' });
+	}
+});
