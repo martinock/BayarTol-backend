@@ -205,3 +205,53 @@ exports.login = functions.https.onRequest((req, res) => {
 			res.status(400).send({ error: 'Undefined Request Method' });
 	}
 });
+
+exports.organization = functions.https.onRequest((req, res) => {
+	switch (req.method) {
+		var isOrganizationExists = false
+		case 'POST':
+			admin.database().ref("/organizations").once('value', function(snapshot) {
+				if (snapshot.hasChild(req.body.uid)) {
+					isOrganizationExists = true
+				}
+			})
+			.then(function() {
+				if (isOrganizationExists) {
+					var data = {
+						status: 'error',
+						msg: 'organization already exists'
+					};
+
+					res.type('application/json');
+					res.status(200).send({status: 'OK'});
+				}
+				else {
+					var data = {
+						status: 'ok',
+						name: req.body.name,
+						member: req.body.member
+					};
+
+					admin.database().ref("/transactions").child(req.query.uid).push().set(data);
+
+					res.type('application/json');
+					res.status(200).send({status: 'OK'});
+				}
+			})
+			.then(function(errorObject){
+				res.status(errorObject.code).send({ error: errorObject.message });
+			});	
+	      	break;
+	     case 'GET' :
+     		admin.database().ref("/organizations").child(req.query.uid).once('value', function(snapshot) {
+				res.type('application/json');
+				res.status(200).send({data: snapshot.val()});
+			})
+			.then(function(errorObject){
+				res.status(errorObject.code).send({ error: errorObject.message });
+			});	
+	     	break;
+		default:
+			res.status(400).send({ error: 'Undefined Request Method' });
+	}
+});
