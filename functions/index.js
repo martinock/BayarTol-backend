@@ -124,36 +124,61 @@ exports.transaction = functions.https.onRequest((req, res) => {
 exports.history = functions.https.onRequest((req, res) => {
 	switch (req.method) {
 	    case 'GET':
-	    	var startDate = new Date(req.query.start_date).getTime();
-			var endDate = new Date(req.query.end_date).getTime();
-			var data = [];
+		    if (req.query.start_date == '' || req.query.end_date == '') {
+	    		var data = [];
 
-			var query = admin.database().ref("/transactions").child(req.query.uid);
-			query.once("value")
-			  .then(function(snapshot) {
-			    snapshot.forEach(function(childSnapshot) {
-			    	var childData = childSnapshot.val();
-			    	var transDate = new Date(childData.datetime).getTime();
+				var query = admin.database().ref("/transactions").child(req.query.uid);
+				query.once("value")
+				  .then(function(snapshot) {
+				    snapshot.forEach(function(childSnapshot) {
+				    	var childData = childSnapshot.val();
 
-			    	if (transDate >= startDate && transDate <= endDate) {
 			    		 var arrayData = {
-			    		 	toll_name: childData.toll_name,
-			    		 	cost: childData.cost,
+			    		 	toll_name: childData.toll_name, 
+			    		 	cost: childData.cost, 
 			    		 	datetime: childData.datetime
 			    		 };
 			    		data.push(arrayData);
-			    	}
-			  });
-			})
-			.then(function(){
-				res.type('application/json');
-				res.status(200).send(JSON.stringify(data));
-			})
-			.catch(function(error) {
-				res.status(errorObject.code).send({ error: errorObject.message });
-			});
+				  });
+				})
+				.then(function(){
+					res.type('application/json');
+					res.status(200).send(JSON.stringify(data));
+				})
+				.catch(function(error) {
+					res.status(errorObject.code).send({ error: errorObject.message });
+				});
+	    	}
+	    	else {
+		    	var startDate = new Date(req.query.start_date).getTime();
+				var endDate = new Date(req.query.end_date).getTime();
+				var data = [];
 
+				var query = admin.database().ref("/transactions").child(req.query.uid);
+				query.once("value")
+				  .then(function(snapshot) {
+				    snapshot.forEach(function(childSnapshot) {
+				    	var childData = childSnapshot.val();
+				    	var transDate = new Date(childData.datetime).getTime();
 
+				    	if (transDate >= startDate && transDate <= endDate) {
+				    		 var arrayData = {
+				    		 	toll_name: childData.toll_name,
+				    		 	cost: childData.cost,
+				    		 	datetime: childData.datetime
+				    		 };
+				    		data.push(arrayData);
+				    	}
+				  });
+				})
+				.then(function(){
+					res.type('application/json');
+					res.status(200).send(JSON.stringify(data));
+				})
+				.catch(function(error) {
+					res.status(errorObject.code).send({ error: errorObject.message });
+				});
+			}
 
       		break;
 	    default:
