@@ -170,8 +170,12 @@ exports.login = functions.https.onRequest((req, res) => {
 			.orderByChild("email")
 			.equalTo(req.body.email)
 			.on("child_added", function(snapshot) {
-				res.type('application/json');
-				res.status(200).send({ uid: snapshot.key });
+				if (snapshot.val() != null) {
+					res.type('application/json');
+					res.status(200).send({ uid: snapshot.key });
+				} else {
+					res.status(400).send({ error: 'Data Not Found' });
+				}
 			}, function (errorObject) {
 				res.status(errorObject.code).send({ error: 'Read data failed' });
 			});
