@@ -124,36 +124,61 @@ exports.transaction = functions.https.onRequest((req, res) => {
 exports.history = functions.https.onRequest((req, res) => {
 	switch (req.method) {
 	    case 'GET':
-	    	var startDate = new Date(req.query.start_date).getTime();
-			var endDate = new Date(req.query.end_date).getTime();
-			var data = [];
+		    if (req.query.start_date == '' || req.query.end_date == '') {
+	    		var data = [];
 
-			var query = admin.database().ref("/transactions").child(req.query.uid);
-			query.once("value")
-			  .then(function(snapshot) {
-			    snapshot.forEach(function(childSnapshot) {
-			    	var childData = childSnapshot.val();
-			    	var transDate = new Date(childData.datetime).getTime();
+				var query = admin.database().ref("/transactions").child(req.query.uid);
+				query.once("value")
+				  .then(function(snapshot) {
+				    snapshot.forEach(function(childSnapshot) {
+				    	var childData = childSnapshot.val();
 
-			    	if (transDate >= startDate && transDate <= endDate) {
 			    		 var arrayData = {
 			    		 	toll_name: childData.toll_name,
 			    		 	cost: childData.cost,
 			    		 	datetime: childData.datetime
 			    		 };
 			    		data.push(arrayData);
-			    	}
-			  });
-			})
-			.then(function(){
-				res.type('application/json');
-				res.status(200).send(JSON.stringify(data));
-			})
-			.catch(function(error) {
-				res.status(errorObject.code).send({ error: errorObject.message });
-			});
+				  });
+				})
+				.then(function(){
+					res.type('application/json');
+					res.status(200).send(JSON.stringify(data));
+				})
+				.catch(function(error) {
+					res.status(errorObject.code).send({ error: errorObject.message });
+				});
+	    	}
+	    	else {
+		    	var startDate = new Date(req.query.start_date).getTime();
+				var endDate = new Date(req.query.end_date).getTime();
+				var data = [];
 
+				var query = admin.database().ref("/transactions").child(req.query.uid);
+				query.once("value")
+				  .then(function(snapshot) {
+				    snapshot.forEach(function(childSnapshot) {
+				    	var childData = childSnapshot.val();
+				    	var transDate = new Date(childData.datetime).getTime();
 
+				    	if (transDate >= startDate && transDate <= endDate) {
+				    		 var arrayData = {
+				    		 	toll_name: childData.toll_name,
+				    		 	cost: childData.cost,
+				    		 	datetime: childData.datetime
+				    		 };
+				    		data.push(arrayData);
+				    	}
+				  });
+				})
+				.then(function(){
+					res.type('application/json');
+					res.status(200).send(JSON.stringify(data));
+				})
+				.catch(function(error) {
+					res.status(errorObject.code).send({ error: errorObject.message });
+				});
+			}
 
       		break;
 	    default:
@@ -201,5 +226,55 @@ exports.edit = functions.https.onRequest((req, res) => {
 			break;
 		default:
 			res.status(400).send({ error: 'Undefined Request Method'});
+		}
+});
+
+exports.organization = functions.https.onRequest((req, res) => {
+	var isOrganizationExists = false;
+	switch (req.method) {
+		case 'POST':
+			admin.database().ref("/organizations").once('value', function(snapshot) {
+				if (snapshot.hasChild(req.body.uid)) {
+					isOrganizationExists = true
+				}
+			})
+			.then(function() {
+				if (isOrganizationExists) {
+					var data = {
+						status: 'error',
+						msg: 'organization already exists'
+					};
+
+					res.type('application/json');
+					res.status(200).send({status: 'OK'});
+				}
+				else {
+					var data = {
+						status: 'ok',
+						name: req.body.name,
+						member: req.body.member
+					};
+
+					admin.database().ref("/transactions").child(req.query.uid).push().set(data);
+
+					res.type('application/json');
+					res.status(200).send({status: 'OK'});
+				}
+			})
+			.then(function(errorObject){
+				res.status(errorObject.code).send({ error: errorObject.message });
+			});
+	      	break;
+	     case 'GET' :
+     		admin.database().ref("/organizations").child(req.query.uid).once('value', function(snapshot) {
+				res.type('application/json');
+				res.status(200).send({data: snapshot.val()});
+			})
+			.then(function(errorObject){
+				res.status(errorObject.code).send({ error: errorObject.message });
+			});
+	    break;
+		default:
+			res.status(400).send({ error: 'Undefined Request Method' });
 	}
 });
