@@ -184,3 +184,22 @@ exports.login = functions.https.onRequest((req, res) => {
 			res.status(400).send({ error: 'Undefined Request Method' });
 	}
 });
+
+exports.edit = functions.https.onRequest((req, res) => {
+	switch (req.method) {
+		case 'POST':
+			admin.database()
+			.ref("/users/" + req.body.uid)
+			.set({
+				name: req.body.name,
+				email: req.body.email,
+				phone_number:req.body.phone_number,
+				address: req.body.address
+			}).then(function() {
+				res.status(200).send({message: 'Profile updated'});
+			});
+			break;
+		default:
+			res.status(400).send({ error: 'Undefined Request Method'});
+	}
+});
