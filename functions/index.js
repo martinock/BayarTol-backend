@@ -144,8 +144,8 @@ exports.history = functions.https.onRequest((req, res) => {
 				    	var childData = childSnapshot.val();
 
 			    		 var arrayData = {
-			    		 	toll_name: childData.toll_name, 
-			    		 	cost: childData.cost, 
+			    		 	toll_name: childData.toll_name,
+			    		 	cost: childData.cost,
 			    		 	datetime: childData.datetime
 			    		 };
 			    		data.push(arrayData);
@@ -205,8 +205,12 @@ exports.login = functions.https.onRequest((req, res) => {
 			.orderByChild("email")
 			.equalTo(req.body.email)
 			.on("child_added", function(snapshot) {
-				res.type('application/json');
-				res.status(200).send({ uid: snapshot.key });
+				if (snapshot.val() != null) {
+					res.type('application/json');
+					res.status(200).send({ uid: snapshot.key });
+				} else {
+					res.status(400).send({ error: 'Data Not Found' });
+				}
 			}, function (errorObject) {
 				res.status(errorObject.code).send({ error: 'Read data failed' });
 			});
@@ -214,6 +218,25 @@ exports.login = functions.https.onRequest((req, res) => {
 		default:
 			res.status(400).send({ error: 'Undefined Request Method' });
 	}
+});
+
+exports.edit = functions.https.onRequest((req, res) => {
+	switch (req.method) {
+		case 'POST':
+			admin.database()
+			.ref("/users/" + req.body.uid)
+			.set({
+				name: req.body.name,
+				email: req.body.email,
+				phone_number:req.body.phone_number,
+				address: req.body.address
+			}).then(function() {
+				res.status(200).send({message: 'Profile updated'});
+			});
+			break;
+		default:
+			res.status(400).send({ error: 'Undefined Request Method'});
+		}
 });
 
 exports.organization = functions.https.onRequest((req, res) => {
