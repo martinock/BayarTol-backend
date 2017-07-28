@@ -35,7 +35,7 @@ exports.register = functions.https.onRequest((req, res) => {
 
 							//Set New User Data
 							res.type('application/json');
-							res.status(200).send(JSON.stringify(body));
+							res.status(200).send({data: JSON.stringify(body)});
 
 						}
 						else if (req.body.role == 'toll') {
@@ -52,7 +52,7 @@ exports.register = functions.https.onRequest((req, res) => {
 
 							//Set New User Data
 							res.type('application/json');
-							res.status(200).send(JSON.stringify(body));
+							res.status(200).send({data: JSON.stringify(body)});
 						}
 						else {
 
@@ -77,7 +77,7 @@ exports.profile = functions.https.onRequest((req, res) => {
 	    case 'GET':
 			admin.database().ref("/users").child(req.query.uid).on("value", function(snapshot) {
 				res.type('application/json');
-				res.status(200).send(snapshot.val());
+				res.status(200).send({data: snapshot.val()});
 			}, function (errorObject) {
 				res.status(errorObject.code).send({ error: 'Read data failed' });
 			});
@@ -94,23 +94,33 @@ exports.transaction = functions.https.onRequest((req, res) => {
 			var dt = dateTime.create();
 			var formattedDatetime = dt.format('Y-m-d H:M:S');
 			var tollData;
+			var money;
+
+			admin.database().ref("/users").child(req.query.uid).on("users", function(snapshot) {
+				money = snapshot.val().money;
+			});
 
 			admin.database().ref("/tolls").child(req.query.tid).on("value", function(snapshot) {
 				tollData = snapshot.val();
 
-				var data = {
-					uid: req.query.uid,
-					tid: req.query.tid,
-					toll_name: tollData.name,
-					cost: tollData.cost,
-					datetime: formattedDatetime
+				if (tollData.cost > money) {
+					res.type('application/json');
+					res.status(200).send({status: 'error', msg: 'money not enough'});
 				}
+				else {
+					var data = {
+						uid: req.query.uid,
+						tid: req.query.tid,
+						toll_name: tollData.name,
+						cost: tollData.cost,
+						datetime: formattedDatetime
+					}
 
-				admin.database().ref("/transactions").child(req.query.uid).push().set(data)
+					admin.database().ref("/transactions").child(req.query.uid).push().set(data)
 
-				res.type('application/json');
-				res.status(200).send({status: 'OK'});
-
+					res.type('application/json');
+					res.status(200).send({status: 'OK'});
+				}
 			}, function (errorObject) {
 				res.status(errorObject.code).send({ error: 'Read data failed' });
 			});
@@ -129,7 +139,7 @@ exports.history = functions.https.onRequest((req, res) => {
 
 				var query = admin.database().ref("/transactions").child(req.query.uid);
 				query.once("value")
-				  .then(function(snapshot) {
+				.then(function(snapshot) {
 				    snapshot.forEach(function(childSnapshot) {
 				    	var childData = childSnapshot.val();
 
@@ -143,9 +153,9 @@ exports.history = functions.https.onRequest((req, res) => {
 				})
 				.then(function(){
 					res.type('application/json');
-					res.status(200).send(JSON.stringify(data));
+					res.status(200).send({data: data});
 				})
-				.catch(function(error) {
+				.catch(function(errorObject) {
 					res.status(errorObject.code).send({ error: errorObject.message });
 				});
 	    	}
@@ -156,7 +166,7 @@ exports.history = functions.https.onRequest((req, res) => {
 
 				var query = admin.database().ref("/transactions").child(req.query.uid);
 				query.once("value")
-				  .then(function(snapshot) {
+				.then(function(snapshot) {
 				    snapshot.forEach(function(childSnapshot) {
 				    	var childData = childSnapshot.val();
 				    	var transDate = new Date(childData.datetime).getTime();
@@ -173,9 +183,9 @@ exports.history = functions.https.onRequest((req, res) => {
 				})
 				.then(function(){
 					res.type('application/json');
-					res.status(200).send(JSON.stringify(data));
+					res.status(200).send({data: JSON.stringify(data)});
 				})
-				.catch(function(error) {
+				.catch(function(errorObject) {
 					res.status(errorObject.code).send({ error: errorObject.message });
 				});
 			}
@@ -207,9 +217,9 @@ exports.login = functions.https.onRequest((req, res) => {
 });
 
 exports.organization = functions.https.onRequest((req, res) => {
-	switch (req.method) {
-		var isOrganizationExists = false
+	switch (req.method) {	
 		case 'POST':
+			var isOrganizationExists = false;
 			admin.database().ref("/organizations").once('value', function(snapshot) {
 				if (snapshot.hasChild(req.body.uid)) {
 					isOrganizationExists = true
@@ -217,6 +227,7 @@ exports.organization = functions.https.onRequest((req, res) => {
 			})
 			.then(function() {
 				if (isOrganizationExists) {
+					console.log("Masuk 1")
 					var data = {
 						status: 'error',
 						msg: 'organization already exists'
@@ -226,23 +237,25 @@ exports.organization = functions.https.onRequest((req, res) => {
 					res.status(200).send({status: 'OK'});
 				}
 				else {
+					var dt = dateTime.create();
+					var formattedDatetime = dt.format('Y-m-d H:M:S');
+
 					var data = {
-						status: 'ok',
 						name: req.body.name,
-						member: req.body.member
+						date: formattedDatetime
 					};
 
-					admin.database().ref("/transactions").child(req.query.uid).push().set(data);
+					admin.database().ref("/organizations").child(req.body.uid).set(data);
 
 					res.type('application/json');
-					res.status(200).send({status: 'OK'});
+					res.status(200).send({status: 'OK', name: req.body.name, member: req.body.member});
 				}
 			})
 			.then(function(errorObject){
 				res.status(errorObject.code).send({ error: errorObject.message });
 			});	
-	      	break;
-	     case 'GET' :
+			break;
+	    case 'GET' :
      		admin.database().ref("/organizations").child(req.query.uid).once('value', function(snapshot) {
 				res.type('application/json');
 				res.status(200).send({data: snapshot.val()});
@@ -253,5 +266,6 @@ exports.organization = functions.https.onRequest((req, res) => {
 	     	break;
 		default:
 			res.status(400).send({ error: 'Undefined Request Method' });
+			break;
 	}
 });
