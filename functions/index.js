@@ -153,8 +153,8 @@ exports.history = functions.https.onRequest((req, res) => {
 				    	var childData = childSnapshot.val();
 
 			    		 var arrayData = {
-			    		 	toll_name: childData.toll_name, 
-			    		 	cost: childData.cost, 
+			    		 	toll_name: childData.toll_name,
+			    		 	cost: childData.cost,
 			    		 	datetime: childData.datetime
 			    		 };
 			    		data.push(arrayData);
@@ -225,8 +225,27 @@ exports.login = functions.https.onRequest((req, res) => {
 	}
 });
 
+exports.edit = functions.https.onRequest((req, res) => {
+	switch (req.method) {
+		case 'POST':
+			admin.database()
+			.ref("/users/" + req.body.uid)
+			.set({
+				name: req.body.name,
+				email: req.body.email,
+				phone_number:req.body.phone_number,
+				address: req.body.address
+			}).then(function() {
+				res.status(200).send({data: {status: 'ok'}});
+			});
+			break;
+		default:
+			res.status(400).send({ error: 'Undefined Request Method'});
+		}
+});
+
 exports.organization = functions.https.onRequest((req, res) => {
-	switch (req.method) {	
+	switch (req.method) {
 		case 'POST':
 			var isOrganizationExists = false;
 			admin.database().ref("/organizations").once('value', function(snapshot) {
@@ -267,7 +286,7 @@ exports.organization = functions.https.onRequest((req, res) => {
 			.catch(function(errorObject){
 				console.log(errorObject)
 				res.status(errorObject.code).send({ error: errorObject.message });
-			});	
+			});
 			break;
 	    case 'GET' :
 	    	var return_data = [];
@@ -281,7 +300,7 @@ exports.organization = functions.https.onRequest((req, res) => {
 		    		 	name: childData.name,
 		    		 	email: childData.email
 	    			};
-			    	
+
 			    	return_data.push(arrayData);
 			 	});
 
@@ -298,7 +317,7 @@ exports.organization = functions.https.onRequest((req, res) => {
 			})
 			.then(function(errorObject){
 				res.status(errorObject.code).send({data: { error: errorObject.message }});
-			});	
+			});
 	     	break;
 		default:
 			res.status(400).send({ error: 'Undefined Request Method' });
@@ -307,7 +326,7 @@ exports.organization = functions.https.onRequest((req, res) => {
 });
 
 exports.addMember = functions.https.onRequest((req, res) => {
-	switch (req.method) {	
+	switch (req.method) {
 		case 'POST':
 			var uid;
 			var name;
@@ -350,14 +369,14 @@ exports.addMember = functions.https.onRequest((req, res) => {
 				    		 	name: childData.name,
 				    		 	email: childData.email
 				    		};
-					    	
+
 					    	return_data.push(arrayData);
 					 	});
 
 						res.type('application/json');
 						res.status(200).send({data: return_data});
 					})
-				})				
+				})
 			});
 		break;
 		default:
