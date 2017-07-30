@@ -3,7 +3,16 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const dateTime = require('node-datetime');
-admin.initializeApp(functions.config().firebase);
+
+admin.initializeApp({
+  credential: admin.credential.cert({
+    projectId: "upiki-77460",
+    clientEmail: "firebase-adminsdk-lare7@upiki-77460.iam.gserviceaccount.com",
+    privateKey: "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCmmtLYAh/rh3xO\nRCbk9xEn0ja9BE6U0nxp8oA60jXMJnV9sGif3I3L65cgTVtheyHvxHT0xqnktI53\nO3hPbGHUhc8Qi8Ipw07pX+xQpw/KTWFnT4ecIB3AhzpejVyWnEDFLGZMDtD1p/nd\n0XSxCjj7zk+pxuAeBUd4B5E5Yo0CjDZ9caS9rhmAlRVtCGRO0PENy+zvpctXFn9L\nZ42fedXxxQA+nLM8tDC2U9UXEQOI8aa71wnz5gYKWkQGUz3VBbr+dDS8sToe3QNr\nTDDF0h8AGpo63GOqXKzM3omr5pEcftxqz0PMXd6oV11UwX7xYP0zC1jLM1S3mnBq\ni3Bsyci1AgMBAAECggEAGhqjE5ZNow1A9FBoWbK+fONKkVYl69qJBN6qqcy7Aig6\ne32S/w1DKGLa9IQ6X6031YYOHzYrc3q44cSvJp6gO3jVx01mmD2SVS2i7MYoSrXS\nH6pN4LAFiV+GzT7P9Yc4/MvmoV8m7X6qv08svfqQkB+0yrCu9/UyzAM/hWLEHlRR\nogCHLYyTrmAOnMvMFqd/J0jYdD8A59o1IEvJsYtFQs5Q10w3i3m1PaVEt0dv2uJS\nPrOImirhGHlWAi+JBL5V13OK4Kxp9TkCbXKbSs98Cr9r078bkbpS+GubUEknzrLR\np5uDJ44cU/1VfNWkCDQ5+O5fJHyBnJsu3sUVuB8b0QKBgQDoLMoekqQ/4tWDAneo\n+xLXGTCVxsAEV+Xyl4oKNaAPaRE/akJLW0O4t7r/BXgsSobhgXhugq+uLd4ReIgB\n43b/N9hOnV14wr4J2jduO4V2iyWaksg8+wSFiHmOXqI1um9HaNcI8MZSaLNNRMFr\nSXt2LIWaAdQfFwWLeNIvGVUzWQKBgQC3s4NCDkZQQx6exeaiD6erK1eMVZ/H5d6q\nYeVEWw4lqtSLuXbLD/DrFyDmArwNTD/JbaHmWo0CB2FF2YHO89RzKIOu3ulitRYy\nD4DdlF1Qu5LrdWV6t7lEAY22YkJlyGKqv7/xSS4rR0pgHEmzQMbyFgh99UVhAPS9\nmtqjNf3gvQKBgQCkzBXzOXcoeaO/yCKTaRNoZlLcHSTycEmhtfqfYIzqI1PAxXWk\n83TQSmmK1qEEHyo6KqIHHvAAHEKB+CHh5UjzwvngY0aTjvdBGwk5TzpeeEoKu6Ex\n16LP/Zz6dyWAKYMPFtV7XRwIJpUOhX0c4B2oNdXnCOE96CNhajMWh064kQKBgCMd\nvcmy0N4m9oODcUMpmvOtpV6+P30HBDmt3RXkEiBBN8A+A+dtdLB8C13sx+YC3W6z\n9m8CgFIS9xVTLu1Qzxv0crfLBPJJi6SmMgwpgG0ebkd0eaGr3U6SvXRP9EFgvPvH\nC/oj8x9y0VTuE2igyWcdryHk8Q5KEH7uSz1H5PBBAoGAYtHi2bQNRYzrDhcEW/Mx\nD7AaUuHZVnDrbBlvN7gI3tsQqs9C7pBn/aoHXd6g8nUgJ6dMB++P99McoZI5J0yh\ngvFoZWLrvVh5V4YLUvwEEiixdMF3rjQBAtlJsqV9vJlFwM1NHSZBa4gGAk49R8SA\nRbs3Hs1HoPCpWJ+CfYRBAjU=\n-----END PRIVATE KEY-----\n"
+  }),
+  databaseURL: "https://upiki-77460.firebaseio.com/"
+});
+
 
 exports.register = functions.https.onRequest((req, res) => {
 	switch (req.method) {
@@ -59,7 +68,7 @@ exports.register = functions.https.onRequest((req, res) => {
 						}
 					})
 					.catch(function(error) {
-						res.status(500).send({ error: error.message });
+						res.status(404).send({ error: error.message });
 					});
 					break;
 				default:
@@ -200,16 +209,16 @@ exports.history = functions.https.onRequest((req, res) => {
 exports.login = functions.https.onRequest((req, res) => {
 	switch (req.method) {
 		case 'POST':
-			admin.database()
-			.ref("/users")
-			.orderByChild("email")
-			.equalTo(req.body.email)
-			.on("child_added", function(snapshot) {
-				res.type('application/json');
-				res.status(200).send({ uid: snapshot.key });
-			}, function (errorObject) {
-				res.status(errorObject.code).send({ error: 'Read data failed' });
-			});
+		console.log(JSON.stringify(req.body.email))
+			admin.auth().getUserByEmail(req.body.email)
+			 	.then(function(userRecord) {
+			 		res.type('application/json');
+					res.status(200).send({data: {uid: userRecord.uid}});
+			})
+			.catch(function(error) {
+				console.log(error)
+				res.status(404).send({data: {status: "error", error: "user-not-exists" }});
+			})
 			break;
 		default:
 			res.status(400).send({ error: 'Undefined Request Method' });
@@ -227,7 +236,6 @@ exports.organization = functions.https.onRequest((req, res) => {
 			})
 			.then(function() {
 				if (isOrganizationExists) {
-					console.log("Masuk 1")
 					var data = {
 						status: 'error',
 						msg: 'organization already exists'
@@ -256,14 +264,37 @@ exports.organization = functions.https.onRequest((req, res) => {
 					res.status(200).send({data: returnData});
 				}
 			})
-			.then(function(errorObject){
+			.catch(function(errorObject){
+				console.log(errorObject)
 				res.status(errorObject.code).send({ error: errorObject.message });
 			});	
 			break;
 	    case 'GET' :
-     		admin.database().ref("/organizations").child(req.query.uid).once('value', function(snapshot) {
+	    	var return_data = [];
+
+     		admin.database().ref("/organizations").child(req.query.uid).child("member").once('value', function(snapshot) {
+				snapshot.forEach(function(childSnapshot) {
+			    	var childData = childSnapshot.val();
+
+		    		var arrayData = {
+		    		 	join_date: childData.join_date,
+		    		 	name: childData.name,
+		    		 	email: childData.email
+	    			};
+			    	
+			    	return_data.push(arrayData);
+			 	});
+
 				res.type('application/json');
-				res.status(200).send({data: snapshot.val()});
+
+				if (return_data.length <= 0) {
+					console.log("Masuk 1");
+					res.status(200).send({data: "no-organization"});
+				}
+				else {
+					console.log("Masuk 2");
+					res.status(200).send({data: return_data});
+				}
 			})
 			.then(function(errorObject){
 				res.status(errorObject.code).send({data: { error: errorObject.message }});
@@ -284,7 +315,10 @@ exports.addMember = functions.https.onRequest((req, res) => {
 			admin.auth().getUserByEmail(req.body.email)
 			 	.then(function(userRecord) {
 			 		uid = userRecord.uid;
-			 		console.log("lala ", uid)
+			})
+			.catch(function(error) {
+				console.log(error)
+				res.status(404).send({data: {status: "error", error: "user-not-exists" }});
 			})
 			.then (function() {
 				var dt = dateTime.create();
@@ -294,38 +328,36 @@ exports.addMember = functions.https.onRequest((req, res) => {
 				admin.database().ref("/users").child(uid).once('value', function(snapshot) {
 					name = snapshot.val().name;
 				})
+				.then(function() {
+					data = {
+						name: name,
+						email: req.body.email,
+						join_date: formattedDatetime
+					};
 
-				data = {
-					name: name,
-					email: req.body.email,
-					join_date: formattedDatetime
-				};
-
-				admin.database().ref("/organizations").child(req.body.uid).child("member").child(uid)
-					.set(data);
-			})
-			.then (function() {
-				var return_data;
-
-				admin.database().ref("/organizations").child(req.body.uid).child("member").once('value', function(snapshot) {
-					snapshot.forEach(function(childSnapshot) {
-				    	var childData = childSnapshot.val();
-
-			    		var arrayData = {
-			    		 	join_date: childData.join_date,
-			    		 	name: childData.name,
-			    		 	email: childData.email
-			    		};
-				    	
-				    	return_data.push(arrayData);
-				  });
+					admin.database().ref("/organizations").child(req.body.uid).child("member").child(uid)
+						.set(data);
 				})
+				.then (function() {
+					var return_data = [];
 
-				res.type('application/json');
-				res.status(200).send({data: return_data});
-			})
-			 	.catch(function(error) {
-			    console.log("Error fetching user data:", error);
+					admin.database().ref("/organizations").child(req.body.uid).child("member").once('value', function(snapshot) {
+						snapshot.forEach(function(childSnapshot) {
+					    	var childData = childSnapshot.val();
+
+				    		var arrayData = {
+				    		 	join_date: childData.join_date,
+				    		 	name: childData.name,
+				    		 	email: childData.email
+				    		};
+					    	
+					    	return_data.push(arrayData);
+					 	});
+
+						res.type('application/json');
+						res.status(200).send({data: return_data});
+					})
+				})				
 			});
 		break;
 		default:
